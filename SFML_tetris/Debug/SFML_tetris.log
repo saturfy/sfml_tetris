@@ -1,4 +1,4 @@
 ﻿  SFML_tetris.cpp
-p:\prog\cpp_tutorials\projects\sfml projects\sfml_tetris\sfml_tetris\sfml_tetris.cpp(67): warning C4305: 'initializing': truncation from 'double' to 'float'
-p:\prog\cpp_tutorials\projects\sfml projects\sfml_tetris\sfml_tetris\sfml_tetris.cpp(140): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+p:\prog\cpp_tutorials\projects\sfml projects\sfml_tetris\sfml_tetris\sfml_tetris.cpp(89): warning C4305: 'initializing': truncation from 'double' to 'float'
+p:\prog\cpp_tutorials\projects\sfml projects\sfml_tetris\sfml_tetris\sfml_tetris.cpp(212): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   SFML_tetris.vcxproj -> P:\prog\cpp_tutorials\PROJECTS\SFML projects\SFML_tetris\Debug\SFML_tetris.exe

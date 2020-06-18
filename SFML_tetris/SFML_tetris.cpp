@@ -30,13 +30,35 @@ struct Point
 };
 
 // point a will contain the tetromino parts
-std::array<Point, 4> a;
-//choose a tetromino from the list of 7 in figures
+std::array<Point, 4> a,ta;
+
+// collision detection
+// we take the array which holds the actual tetromino and check if the positions overlap any boundaries:
+//return 0-no collison, 1: collision in the x direction 2: collision in the y direction
+int coldet(std::array<Point, 4> a)
+{
+	for (int i = 0; i < 4; i++) 
+	{
+		//check the x direction
+		if (a[i].x < 0  || a[i].x >= N )
+		{
+			return 1;
+		}
+
+		//check the y direction
+		if ( a[i].y >= M)
+		{
+			return 2;
+		}
+
+	}
+	return 0;
+}
 
 
 int main()
 {	
-	
+	//choose a tetromino from the list of 7 in figures
 	int n = 3;
 	for (int i = 0; i < 4; i++)
 	{
@@ -64,9 +86,13 @@ int main()
 	int colorNum = 1;
 
 	float timer = 0;
-	float delay = 0.3;
+	float delay = 0.1;
 
 	sf::Clock clock;
+	int counter = 0;
+	bool fall=true;
+
+	int D = 10; // sets the falling speed (1 step fall per D update cycle)
 
 	while (window.isOpen())
 	{
@@ -74,6 +100,7 @@ int main()
 		float time = clock.getElapsedTime().asSeconds();
 		clock.restart();
 		timer += time;
+		
 
 		//checking to close the window
 		sf::Event e;
@@ -92,26 +119,71 @@ int main()
 			}
 		}
 		
-
-		//Tick
+		
+		//Movement and game logic is updated after the delay time 
 		if (timer > delay)
 		{
-			//fall
-			for (int i = 0; i < 4; i++)
-			{
-				a[i].y += 1;
-				
-			}
-
-			//MOVE
-			for (int i = 0; i < 4; i++)
-			{
-				a[i].x += dx;
-				
-			}
-			dx = 0;
-
 			
+			// difficulty: this sets how many times the delay time passes before the tetromino falls 1 step
+			if (counter == D) 
+			{
+				fall = true;
+				counter = 0;
+			}
+			
+			
+		
+			
+			//Movement
+			for (int i = 0; i < 4; i++)
+			{
+				
+				
+				//temporarily store the old values
+				ta[i].x = a[i].x;
+				ta[i].y = a[i].y;
+				
+				
+				//update values
+				//left-right movement
+				a[i].x = a[i].x + dx;
+				//fall
+				if (fall == true)
+				{
+					a[i].y += 1;
+					
+				}
+				
+			}
+			
+			//collision detection 		
+			// in the x direction
+			if (coldet(a)==1)
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					a[i].x = ta[i].x;
+					
+				}
+
+			}
+			// in the y direction, here the piece is locked if collision ever detected
+			if (coldet(a) == 2)
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					a[i].x = ta[i].x;
+					a[i].y = ta[i].y;
+
+				}
+
+			}
+
+
+			//setting the flags to default
+			fall = false;
+			dx = 0;
+			counter++;
 
 			//Rotate
 			if (rotate)
@@ -122,6 +194,7 @@ int main()
 					//first store old values
 					int x = a[i].x;
 					int y = a[i].y;
+					//calculate the new ones
 					a[i].x = p.x + p.y - y;
 					a[i].y = p.y - p.x + x;
 					
