@@ -40,15 +40,9 @@ int coldet(std::array<Point, 4> a)
 	for (int i = 0; i < 4; i++) 
 	{
 		//check the x direction
-		if (a[i].x < 0  || a[i].x >= N )
+		if (a[i].x < 0 || a[i].x >= N || a[i].y >= M)
 		{
 			return 1;
-		}
-
-		//check the y direction
-		if ( a[i].y >= M)
-		{
-			return 2;
 		}
 
 	}
@@ -82,7 +76,6 @@ int main()
 
 	//variables for moving the tetromino
 	int dx = 0;
-	bool rotate = 0;
 	int colorNum = 1;
 
 	float timer = 0;
@@ -91,6 +84,7 @@ int main()
 	sf::Clock clock;
 	int counter = 0;
 	bool fall=true;
+	bool rotate = false;
 
 	int D = 10; // sets the falling speed (1 step fall per D update cycle)
 
@@ -113,7 +107,7 @@ int main()
 			//User input
 			if (e.type == sf::Event::KeyPressed)
 			{
-				if (e.key.code == sf::Keyboard::Space) rotate = true;
+				if (e.key.code == sf::Keyboard::Up) rotate = true;
 				else if (e.key.code == sf::Keyboard::Left) dx = -1;
 				else if (e.key.code == sf::Keyboard::Right) dx = 1;
 			}
@@ -125,82 +119,107 @@ int main()
 		{
 			
 			// difficulty: this sets how many times the delay time passes before the tetromino falls 1 step
+			counter++;
 			if (counter == D) 
 			{
 				fall = true;
 				counter = 0;
 			}
+
 			
+			//Movement always happens in order
+			// First we take user input (move OR rotate) and check if its possible
+			// After user input we make the tetromino fall if fall flag is true
 			
-		
-			
-			//Movement
-			for (int i = 0; i < 4; i++)
-			{
-				
-				
-				//temporarily store the old values
-				ta[i].x = a[i].x;
-				ta[i].y = a[i].y;
-				
-				
-				//update values
-				//left-right movement
-				a[i].x = a[i].x + dx;
-				//fall
-				if (fall == true)
-				{
-					a[i].y += 1;
-					
-				}
-				
-			}
-			
-			//collision detection 		
-			// in the x direction
-			if (coldet(a)==1)
+			//sideways movement 
+			if (dx != 0)
 			{
 				for (int i = 0; i < 4; i++)
 				{
-					a[i].x = ta[i].x;
-					
+					//temporarily store the old values
+					ta[i].x = a[i].x;
+					ta[i].y = a[i].y;
+					//calculate the new values
+					a[i].x = a[i].x + dx;
 				}
+				//Reset flags
+				dx = 0;
 
-			}
-			// in the y direction, here the piece is locked if collision ever detected
-			if (coldet(a) == 2)
-			{
-				for (int i = 0; i < 4; i++)
+				//collision detection 		
+				if (coldet(a) != 0)
 				{
-					a[i].x = ta[i].x;
-					a[i].y = ta[i].y;
+					for (int i = 0; i < 4; i++)
+					{
+						// if collide set it back to the original values
+						a[i].x = ta[i].x;
+						a[i].y = ta[i].y;
+					}
 
 				}
 
 			}
-
-
-			//setting the flags to default
-			fall = false;
-			dx = 0;
-			counter++;
 
 			//Rotate
-			if (rotate)
+			else if(rotate == true)
 			{
 				Point p = a[1]; //center of rotation
 				for (int i = 0; i < 4; i++)
 				{
 					//first store old values
-					int x = a[i].x;
-					int y = a[i].y;
+					ta[i].x = a[i].x;
+					ta[i].y = a[i].y;
 					//calculate the new ones
-					a[i].x = p.x + p.y - y;
-					a[i].y = p.y - p.x + x;
-					
+					a[i].x = p.x + p.y - ta[i].y;
+					a[i].y = p.y - p.x + ta[i].x;
+
 				}
+				//Reste flags
 				rotate = false;
+				
+				//collision detection 		
+				if (coldet(a) != 0)
+				{
+					for (int i = 0; i < 4; i++)
+					{
+						// if collide set it back to the original values
+						a[i].x = ta[i].x;
+						a[i].y = ta[i].y;
+					}
+
+				}
+			
+			
 			}
+
+			// Fall
+			if (fall == true)
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					//temporarily store the old values
+					ta[i].x = a[i].x;
+					ta[i].y = a[i].y;
+					//fall
+					a[i].y += 1;
+				}
+				//Reset flags
+				fall = false;
+
+				//collision detection 		
+				if (coldet(a) != 0)
+				{
+					for (int i = 0; i < 4; i++)
+					{
+						// if collide set it back to the original values
+						a[i].x = ta[i].x;
+						a[i].y = ta[i].y;
+					}
+
+				}
+			}
+
+
+			
 
 			//clear the window
 			window.clear(sf::Color::White);
