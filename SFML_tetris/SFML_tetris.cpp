@@ -1,5 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <array>
+#include <random>
+#include <functional>
 #include <iostream>
 
 //play area size
@@ -7,29 +9,31 @@ const int M = 20;
 const int N = 10;
 
 //play area state hold in the field variable
+// field values:
+//8 : empty
+//0-7 : colored tile
 std::array < std::array<int, N>, M> field = 
-
 { {
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,1,0,0,0,0,0,0},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,1,1,8,8,1,1,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
 } };
 
 // define the tetrominos
@@ -53,28 +57,45 @@ struct Point
 };
 
 // point a will contain the tetromino parts
-std::array<Point, 4> a,ta;
+std::array<Point, 4> a, ta; 
+
+
+
 
 // collision detection
-// we take the array which holds the actual tetromino and check if the positions overlap any boundaries:
+// we take the array which holds the propsed tetromino coordiantes and check if the positions overlap any boundaries:
 //return 0-no collison, 1: collision in the x direction 2: collision in the y direction
-int coldet(std::array<Point, 4> a)
+int coldet(std::array<Point, 4> a, std::array < std::array<int, N>, M> field)
 {
 	for (int i = 0; i < 4; i++) 
 	{
-		//check the x direction
+		//check the boundaries 
 		if (a[i].x < 0 || a[i].x >= N || a[i].y >= M)
+		{
+			return 1;
+		}
+		
+		// check the field
+		else if (field[a[i].y][a[i].x] != 8) // it is an overlap when the proposed postion is not empty (number 8)
 		{
 			return 1;
 		}
 
 	}
+	
 	return 0;
 }
 
 
 int main()
 {	
+	//random number generator 
+	std::random_device rd;
+	std::default_random_engine generator(rd());
+	std::uniform_int_distribution<int> distribution(0, 7);
+	auto randgen = std::bind(distribution, generator);
+	
+
 	// spawn tetromino
 	int n = 2; //choose a tetromino from the list of 7 in figures
 	int colornum = 2; // the number corresponding to the color of the tetromino
@@ -173,7 +194,7 @@ int main()
 				dx = 0;
 
 				//collision detection 		
-				if (coldet(a) != 0)
+				if (coldet(a,field) != 0)
 				{
 					for (int i = 0; i < 4; i++)
 					{
@@ -204,7 +225,7 @@ int main()
 				rotate = false;
 
 				//collision detection 		
-				if (coldet(a) != 0)
+				if (coldet(a,field) != 0)
 				{
 					for (int i = 0; i < 4; i++)
 					{
@@ -233,7 +254,7 @@ int main()
 				fall = false;
 
 				//collision detection 		
-				if (coldet(a) != 0)
+				if (coldet(a,field) != 0)
 				{
 					for (int i = 0; i < 4; i++)
 					{
@@ -241,7 +262,25 @@ int main()
 						a[i].x = ta[i].x;
 						a[i].y = ta[i].y;
 					}
-					lock = true;
+					// if we are there than the piece is collided while it fall this means it has to be locked
+					// lock tetromino into field 
+
+					for (int i = 0; i < 4; i++)
+					{
+						field[a[i].y][a[i].x] = colornum;
+					}
+					
+					
+					// spawn new tetromino
+					// one random number generates the form color combination (they are locked)
+					n = randgen();
+					colornum = n;
+					//creating starting coordinates
+					for (int i = 0; i < 4; i++)
+					{
+						a[i].x = figures[n][i] % 2 + 5;
+						a[i].y = figures[n][i] / 2;
+					}
 				}
 			}
 
@@ -258,6 +297,11 @@ int main()
 			{
 				for (int j = 0; j < N; j++)
 				{
+					if (field[i][j] == 8)
+					{
+						continue;
+					}
+					
 					// set the texture rect for the correct color
 					s.setTextureRect(sf::IntRect(field[i][j] * 18, 0, 18, 18));
 					s.setPosition(j * 18, i * 18);
