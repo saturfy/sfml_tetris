@@ -4,9 +4,13 @@
 #include <functional>
 #include <iostream>
 
-//play area size
+//play area size in tetromino squares
 const int M = 20;
 const int N = 10;
+
+// play are shift in pixels (moves it around in the window, so it can be matched with the backgorund)
+const int xshift = 28; // horizontal shift
+const int yshift = 31; // vertical shift
 
 //play area state hold in the field variable
 // field values:
@@ -23,7 +27,7 @@ std::array < std::array<int, N>, M> field =
 	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
-	{8,1,1,8,8,1,1,8,8,8},
+	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
@@ -86,6 +90,21 @@ int coldet(std::array<Point, 4> a, std::array < std::array<int, N>, M> field)
 	return 0;
 }
 
+// line check
+//returns true if the line is full of tetrmino pieces, means no colorcode in that line is 8
+bool linecheck(std::array<int, N> line)
+{
+	for (int i = 0; i < N; i++)
+	{
+		if (line[i] == 8)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 
 int main()
 {	
@@ -112,11 +131,26 @@ int main()
 
 	// loading texture for tetrominos the file is in the main directory
 	sf::Texture t;
-	//t.loadFromFile("P:\prog\cpp_tutorials\PROJECTS\SFML projects\SFML_tetris");
 	t.loadFromFile("../tiles.png");
 
 	// create drawable sprite from the texture
 	sf::Sprite s(t);
+
+	//load texture for the backgorund
+	sf::Texture bg;
+	bg.loadFromFile("../background.png");
+
+	//create backgorund sprite
+	sf::Sprite bgs(bg);
+
+	//load texture for the forground frame
+	sf::Texture fg;
+	fg.loadFromFile("../frame.png");
+
+	//create foreground sprite
+	sf::Sprite fgs(fg);
+
+
 	
 
 	//variables for moving the tetromino
@@ -132,7 +166,7 @@ int main()
 	bool rotate = false; // true if the user pressed the rotate button and tetromina has to be rotated in this cycle
 	bool lock = false; // true if the tetromni touched something below it. It stops moving and "locked" 
 
-	int D = 10; // sets the falling speed (1 step fall per D update cycle)
+	int D = 5; // sets the falling speed (1 step fall per D update cycle)
 
 	
 
@@ -282,6 +316,16 @@ int main()
 						a[i].y = figures[n][i] / 2;
 					}
 				}
+			
+			// check line completion bottom to top
+				
+				for (int i = 0; i < M; i++)
+				{
+					if (linecheck(field[i]))
+						std::cout << "full line"<< i << "/n";
+
+				}
+
 			}
 
 
@@ -291,6 +335,8 @@ int main()
 			window.clear(sf::Color::White);
 
 			//draw game elements
+			//draw backgorund 
+			window.draw(bgs);
 
 			// draw field
 			for (int i = 0; i < M; i++)
@@ -304,7 +350,7 @@ int main()
 					
 					// set the texture rect for the correct color
 					s.setTextureRect(sf::IntRect(field[i][j] * 18, 0, 18, 18));
-					s.setPosition(j * 18, i * 18);
+					s.setPosition(j * 18 + xshift, i * 18 + yshift);
 					window.draw(s);
 				}
 			}
@@ -317,13 +363,17 @@ int main()
 			for (int i = 0; i < 4; i++)
 			{
 				// set the texture position
-				s.setPosition(a[i].x * 18, a[i].y * 18);
+				s.setPosition(a[i].x * 18 + xshift , a[i].y * 18 + yshift );
 				window.draw(s);
 			}
 
 
+			//draw foreground
+			window.draw(fgs);
+
 			// render everything drawn so far 
 			window.display();
+			
 
 			timer = 0;
 
