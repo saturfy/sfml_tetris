@@ -2,4 +2,7 @@
 p:\prog\cpp_tutorials\projects\sfml projects\sfml_tetris\sfml_tetris\sfml_tetris.cpp(177): warning C4305: 'initializing': truncation from 'double' to 'float'
 p:\prog\cpp_tutorials\projects\sfml projects\sfml_tetris\sfml_tetris\sfml_tetris.cpp(376): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
 p:\prog\cpp_tutorials\projects\sfml projects\sfml_tetris\sfml_tetris\sfml_tetris.cpp(389): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-  SFML_tetris.vcxproj -> P:\prog\cpp_tutorials\PROJECTS\SFML projects\SFML_tetris\Debug\SFML_tetris.exe
+  Generating code
+  All 113 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  SFML_tetris.vcxproj -> P:\prog\cpp_tutorials\PROJECTS\SFML projects\SFML_tetris\Release\SFML_tetris.exe

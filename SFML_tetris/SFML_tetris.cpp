@@ -37,7 +37,7 @@ std::array < std::array<int, N>, M> field =
 	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
+	{0,0,0,0,0,0,0,0,0,0},
 } };
 
 // define the tetrominos
@@ -105,19 +105,36 @@ bool linecheck(std::array<int, N> line)
 	return true;
 }
 
+//delete line
+//deletes one line from the field and shifts it down
+void deleteline(int n, std::array < std::array<int, N>, M>& field)
+{
+	//Shift the lines down into the empty space
+	for (int i = n; i > 0; i--)
+	{
+		field[i] = field[i - 1];
+	}
+
+	// fill the new upmost line with empty space
+	for (int j = 0; j < N; j++)
+	{
+		field[0][j] = 8;
+	}
+}
+
 
 int main()
 {	
 	//random number generator 
 	std::random_device rd;
 	std::default_random_engine generator(rd());
-	std::uniform_int_distribution<int> distribution(0, 7);
+	std::uniform_int_distribution<int> distribution(0, 6);
 	auto randgen = std::bind(distribution, generator);
 	
 
 	// spawn tetromino
-	int n = 2; //choose a tetromino from the list of 7 in figures
-	int colornum = 2; // the number corresponding to the color of the tetromino
+	int n = 6; //choose a tetromino from the list of 7 in figures
+	int colornum = 6; // the number corresponding to the color of the tetromino
 	for (int i = 0; i < 4; i++)
 	{
 		a[i].x = figures[n][i] % 2;
@@ -242,7 +259,7 @@ int main()
 			}
 
 			//Rotate
-			else if (rotate == true)
+			else if (rotate == true && n != 6) //square is never rotated
 			{
 				Point p = a[1]; //center of rotation
 				for (int i = 0; i < 4; i++)
@@ -317,12 +334,18 @@ int main()
 					}
 				}
 			
-			// check line completion bottom to top
+
+			//check line completion bottom to top
 				
-				for (int i = 0; i < M; i++)
+				for (int i = M-1; i >= 0; i--)
 				{
 					if (linecheck(field[i]))
-						std::cout << "full line"<< i << "/n";
+					{
+						// delete the compelete line
+						deleteline(i, field);
+						// increase the counter to check the new line again because the numbers shift down
+						i++;
+					}
 
 				}
 
