@@ -132,14 +132,18 @@ int main()
 	auto randgen = std::bind(distribution, generator);
 	
 
-	// spawn tetromino
-	int n = 6; //choose a tetromino from the list of 7 in figures
-	int colornum = 6; // the number corresponding to the color of the tetromino
+	// spawn the very first tetromino
+	int n = randgen(); //choose a tetromino from the list of 7 in figures
+	int colornum = n; // the number corresponding to the color of the tetromino
 	for (int i = 0; i < 4; i++)
 	{
 		a[i].x = figures[n][i] % 2;
 		a[i].y = figures[n][i] / 2;
 	}
+
+	// prepare the next tetromino
+	int n_next = randgen();
+	int colornum_next = n_next;
 
 	
 
@@ -216,6 +220,7 @@ int main()
 		//Movement and game logic is updated after the delay time 
 		if (timer > delay)
 		{
+			std::cout << n_next;
 
 			// difficulty: this sets how many times the delay time passes before the tetromino falls 1 step
 			counter++;
@@ -322,9 +327,9 @@ int main()
 					}
 					
 					
-					// spawn new tetromino
+					// spawn the next tetromino and generate the new next
 					// one random number generates the form color combination (they are locked)
-					n = randgen();
+					n = n_next;
 					colornum = n;
 					//creating starting coordinates
 					for (int i = 0; i < 4; i++)
@@ -332,7 +337,13 @@ int main()
 						a[i].x = figures[n][i] % 2 + 5;
 						a[i].y = figures[n][i] / 2;
 					}
-				}
+					//genertate the neww one
+					n_next = randgen();
+					colornum_next = n_next;
+				
+				
+				}	
+					
 			
 
 			//check line completion bottom to top
