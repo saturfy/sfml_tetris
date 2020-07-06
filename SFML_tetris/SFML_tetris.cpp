@@ -11,7 +11,7 @@ const int block_size = 18;
 const int M = 20;
 const int N = 10;
 
-// play are shift in pixels (moves it around in the window, so it can be matched with the backgorund)
+// play area shift in pixels (moves it around in the window, so it can be matched with the backgorund)
 const int xshift = 28; // horizontal shift
 const int yshift = 31; // vertical shift
 
