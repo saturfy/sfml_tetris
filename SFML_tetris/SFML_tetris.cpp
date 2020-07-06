@@ -4,7 +4,10 @@
 #include <functional>
 #include <iostream>
 
-//play area size in tetromino squares
+// tetromino block size in pixels on the texture
+const int block_size = 18;
+
+//play area size in tetromino blocks
 const int M = 20;
 const int N = 10;
 
@@ -12,8 +15,22 @@ const int N = 10;
 const int xshift = 28; // horizontal shift
 const int yshift = 31; // vertical shift
 
-//play area state hold in the field variable
-// field values:
+// the colors of the tetromni blcks 
+// the index of the given color corresponds to the position of the colored block in the texture
+enum color
+{
+	blue,
+	purple,
+	red,
+	green,
+	yellow,
+	cyan,
+	orange
+
+};
+
+//play area state is stored in the field variable
+// entry values are corresponding to the tetromino colors
 //8 : empty
 //0-7 : colored tile
 std::array < std::array<int, N>, M> field = 
@@ -63,31 +80,37 @@ struct Point
 // point a will contain the tetromino parts
 std::array<Point, 4> a, ta; 
 
-
+//collision detection results
+enum colres
+{
+	not_collide,
+	collide
+	
+};
 
 
 // collision detection
 // we take the array which holds the propsed tetromino coordiantes and check if the positions overlap any boundaries:
-//return 0-no collison, 1: collision in the x direction 2: collision in the y direction
-int coldet(std::array<Point, 4> a, std::array < std::array<int, N>, M> field)
+//return colres type corresponding to whether or not we had collision
+colres coldet(const std::array<Point, 4> & a, const std::array < std::array<int, N>, M> & field)
 {
 	for (int i = 0; i < 4; i++) 
 	{
 		//check the boundaries 
 		if (a[i].x < 0 || a[i].x >= N || a[i].y >= M)
 		{
-			return 1;
+			return colres::collide;
 		}
 		
 		// check the field
 		else if (field[a[i].y][a[i].x] != 8) // it is an overlap when the proposed postion is not empty (number 8)
 		{
-			return 1;
+			return colres::collide;
 		}
 
 	}
 	
-	return 0;
+	return colres::not_collide;
 }
 
 // line check
@@ -238,27 +261,24 @@ int main()
 			//sideways movement 
 			if (dx != 0)
 			{
+				//temporarily store the old values
+				ta = a;
+				
+				//calculate the new values
 				for (int i = 0; i < 4; i++)
-				{
-					//temporarily store the old values
-					ta[i].x = a[i].x;
-					ta[i].y = a[i].y;
-					//calculate the new values
+				{				
+					
 					a[i].x = a[i].x + dx;
 				}
 				//Reset flags
 				dx = 0;
 
 				//collision detection 		
-				if (coldet(a,field) != 0)
+				if (coldet(a,field) == colres::collide)
 				{
-					for (int i = 0; i < 4; i++)
-					{
-						// if collide set it back to the original values
-						a[i].x = ta[i].x;
-						a[i].y = ta[i].y;
-					}
-
+					// if collide set it back to the original values
+					a = ta;
+					
 				}
 
 			}
@@ -267,12 +287,14 @@ int main()
 			else if (rotate == true && n != 6) //square is never rotated
 			{
 				Point p = a[1]; //center of rotation
+								
+				//first store old values
+				ta = a;
+
+				//calculate the new ones
 				for (int i = 0; i < 4; i++)
 				{
-					//first store old values
-					ta[i].x = a[i].x;
-					ta[i].y = a[i].y;
-					//calculate the new ones
+									
 					a[i].x = p.x + p.y - ta[i].y;
 					a[i].y = p.y - p.x + ta[i].x;
 
@@ -281,15 +303,10 @@ int main()
 				rotate = false;
 
 				//collision detection 		
-				if (coldet(a,field) != 0)
+				if (coldet(a,field) == colres::collide)
 				{
-					for (int i = 0; i < 4; i++)
-					{
-						// if collide set it back to the original values
-						a[i].x = ta[i].x;
-						a[i].y = ta[i].y;
-					}
-
+					// if collide set it back to the original values
+					a = ta;
 				}
 
 
@@ -298,11 +315,10 @@ int main()
 			// Fall
 			if (fall == true)
 			{
+				//temporarily store the old values
+				ta = a;
 				for (int i = 0; i < 4; i++)
 				{
-					//temporarily store the old values
-					ta[i].x = a[i].x;
-					ta[i].y = a[i].y;
 					//fall
 					a[i].y += 1;
 				}
@@ -310,14 +326,11 @@ int main()
 				fall = false;
 
 				//collision detection 		
-				if (coldet(a,field) != 0)
+				if (coldet(a,field) == colres::collide)
 				{
-					for (int i = 0; i < 4; i++)
-					{
-						// if collide set it back to the original values
-						a[i].x = ta[i].x;
-						a[i].y = ta[i].y;
-					}
+					// if collide set it back to the original values
+					a = ta;
+					
 					// if we are there than the piece is collided while it fall this means it has to be locked
 					// lock tetromino into field 
 
@@ -383,21 +396,21 @@ int main()
 					}
 					
 					// set the texture rect for the correct color
-					s.setTextureRect(sf::IntRect(field[i][j] * 18, 0, 18, 18));
-					s.setPosition(j * 18 + xshift, i * 18 + yshift);
+					s.setTextureRect(sf::IntRect(field[i][j] * block_size, 0, block_size, block_size));
+					s.setPosition(j * block_size + xshift, i * block_size + yshift);
 					window.draw(s);
 				}
 			}
 
 			//draw a tetromino
 			// set the texture rect for the correct color
-			s.setTextureRect(sf::IntRect( colornum * 18,0, 18, 18));
+			s.setTextureRect(sf::IntRect( colornum * block_size,0, block_size, block_size));
 
 			// draw tetromino pieces
 			for (int i = 0; i < 4; i++)
 			{
 				// set the texture position
-				s.setPosition(a[i].x * 18 + xshift , a[i].y * 18 + yshift );
+				s.setPosition(a[i].x * block_size + xshift , a[i].y * block_size + yshift );
 				window.draw(s);
 			}
 
