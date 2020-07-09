@@ -57,18 +57,7 @@ std::array < std::array<int, N>, M> field =
 	{0,0,0,0,0,0,0,0,0,0},
 } };
 
-// define the tetrominos
-std::array< std::array<int, 4>, 7> figures =
-{ {
-	{1,3,5,7}, //I
-	{2,4,5,7}, //Z
-	{3,5,4,6}, //S
-	{3,5,4,7}, //T
-	{2,3,5,7}, //L
-	{3,5,7,6}, //J
-	{2,3,4,5}, //O
 
-} };
 
 //coordinates for drawing the tetrominos
 struct Point 
@@ -77,8 +66,56 @@ struct Point
 	int y;
 };
 
-// point a will contain the tetromino parts
-std::array<Point, 4> a, ta; 
+
+
+class tetromino
+{
+public:
+
+	//tetromino type
+	int tetromino_type;
+
+	// store the next tetrmoino type
+	int tetromino_type_next;
+
+	//tetromino color
+	int tetromino_color;
+	
+	//2D point a will contain the tetromino parts, ta is temporary coordinates
+	std::array<Point, 4> a, ta;
+
+	// shifts the x coordinate of the tetromino when first calculated
+	int starting_shift = 5;
+
+	//-----------Public functions----------------------------
+
+	//fills vectro "a" with the tetromino starting coordinates corresponding to the tetromino type
+	void calc_coordinates() 
+	{
+		for (int i = 0; i < a.size(); ++i)
+		{
+			a[i].x = figures[tetromino_type][i] % 2 + starting_shift;// shift is added to place it into the middle of the play area
+			a[i].y = figures[tetromino_type][i] / 2;
+
+		}
+	}
+
+private:
+
+	// define the tetrominos
+	std::array< std::array<int, 4>, 7> figures =
+	{ {
+		{1,3,5,7}, //I
+		{2,4,5,7}, //Z
+		{3,5,4,6}, //S
+		{3,5,4,7}, //T
+		{2,3,5,7}, //L
+		{3,5,7,6}, //J
+		{2,3,4,5}, //O
+
+	} };
+
+};
 
 //collision detection results
 enum colres
@@ -154,19 +191,18 @@ int main()
 	std::uniform_int_distribution<int> distribution(0, 6);
 	auto randgen = std::bind(distribution, generator);
 	
+	//create tetromino object
+	tetromino ttrno;
+
 
 	// spawn the very first tetromino
-	int n = randgen(); //choose a tetromino from the list of 7 in figures
-	int colornum = n; // the number corresponding to the color of the tetromino
-	for (int i = 0; i < 4; i++)
-	{
-		a[i].x = figures[n][i] % 2;
-		a[i].y = figures[n][i] / 2;
-	}
+	ttrno.tetromino_type = randgen(); //choose a tetromino from the list of 7 in figures
+	ttrno.tetromino_color = ttrno.tetromino_type; // the number corresponding to the color of the tetromino
+	ttrno.tetromino_type_next = randgen(); // choose the next tetromino
+	// if we have the tetromino type we calculate the coordinates
+	ttrno.calc_coordinates();
 
-	// prepare the next tetromino
-	int n_next = randgen();
-	int colornum_next = n_next;
+	
 
 	
 
@@ -243,8 +279,7 @@ int main()
 		//Movement and game logic is updated after the delay time 
 		if (timer > delay)
 		{
-			std::cout << n_next;
-
+			
 			// difficulty: this sets how many times the delay time passes before the tetromino falls 1 step
 			counter++;
 			if (counter == D)
@@ -262,51 +297,51 @@ int main()
 			if (dx != 0)
 			{
 				//temporarily store the old values
-				ta = a;
+				ttrno.ta = ttrno.a;
 				
 				//calculate the new values
 				for (int i = 0; i < 4; i++)
 				{				
 					
-					a[i].x = a[i].x + dx;
+					ttrno.a[i].x = ttrno.a[i].x + dx;
 				}
 				//Reset flags
 				dx = 0;
 
 				//collision detection 		
-				if (coldet(a,field) == colres::collide)
+				if (coldet(ttrno.a,field) == colres::collide)
 				{
 					// if collide set it back to the original values
-					a = ta;
+					ttrno.a = ttrno.ta;
 					
 				}
 
 			}
 
 			//Rotate
-			else if (rotate == true && n != 6) //square is never rotated
+			else if (rotate == true && ttrno.tetromino_type != 6) //square is never rotated
 			{
-				Point p = a[1]; //center of rotation
+				Point p = ttrno.a[1]; //center of rotation
 								
 				//first store old values
-				ta = a;
+				ttrno.ta = ttrno.a;
 
 				//calculate the new ones
 				for (int i = 0; i < 4; i++)
 				{
 									
-					a[i].x = p.x + p.y - ta[i].y;
-					a[i].y = p.y - p.x + ta[i].x;
+					ttrno.a[i].x = p.x + p.y - ttrno.ta[i].y;
+					ttrno.a[i].y = p.y - p.x + ttrno.ta[i].x;
 
 				}
 				//Reste flags
 				rotate = false;
 
 				//collision detection 		
-				if (coldet(a,field) == colres::collide)
+				if (coldet(ttrno.a,field) == colres::collide)
 				{
 					// if collide set it back to the original values
-					a = ta;
+					ttrno.a = ttrno.ta;
 				}
 
 
@@ -316,43 +351,40 @@ int main()
 			if (fall == true)
 			{
 				//temporarily store the old values
-				ta = a;
+				ttrno.ta = ttrno.a;
 				for (int i = 0; i < 4; i++)
 				{
 					//fall
-					a[i].y += 1;
+					ttrno.a[i].y += 1;
 				}
 				//Reset flags
 				fall = false;
 
 				//collision detection 		
-				if (coldet(a,field) == colres::collide)
+				if (coldet(ttrno.a,field) == colres::collide)
 				{
 					// if collide set it back to the original values
-					a = ta;
+					ttrno.a = ttrno.ta;
 					
 					// if we are there than the piece is collided while it fall this means it has to be locked
 					// lock tetromino into field 
 
 					for (int i = 0; i < 4; i++)
 					{
-						field[a[i].y][a[i].x] = colornum;
+						field[ttrno.a[i].y][ttrno.a[i].x] = ttrno.tetromino_color;
 					}
 					
 					
 					// spawn the next tetromino and generate the new next
 					// one random number generates the form color combination (they are locked)
-					n = n_next;
-					colornum = n;
+					ttrno.tetromino_type = ttrno.tetromino_type_next;
+					ttrno.tetromino_color = ttrno.tetromino_type;
+					// generate new next tetromino
+					ttrno.tetromino_type_next = randgen();
 					//creating starting coordinates
-					for (int i = 0; i < 4; i++)
-					{
-						a[i].x = figures[n][i] % 2 + 5;
-						a[i].y = figures[n][i] / 2;
-					}
-					//genertate the neww one
-					n_next = randgen();
-					colornum_next = n_next;
+					ttrno.calc_coordinates();
+					
+					
 				
 				
 				}	
@@ -404,13 +436,13 @@ int main()
 
 			//draw a tetromino
 			// set the texture rect for the correct color
-			s.setTextureRect(sf::IntRect( colornum * block_size,0, block_size, block_size));
+			s.setTextureRect(sf::IntRect( ttrno.tetromino_color * block_size,0, block_size, block_size));
 
 			// draw tetromino pieces
 			for (int i = 0; i < 4; i++)
 			{
 				// set the texture position
-				s.setPosition(a[i].x * block_size + xshift , a[i].y * block_size + yshift );
+				s.setPosition(ttrno.a[i].x * block_size + xshift , ttrno.a[i].y * block_size + yshift );
 				window.draw(s);
 			}
 
