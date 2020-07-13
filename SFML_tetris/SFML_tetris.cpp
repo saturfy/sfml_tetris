@@ -33,7 +33,8 @@ enum color
 // entry values are corresponding to the tetromino colors
 //8 : empty
 //0-7 : colored tile
-std::array < std::array<int, N>, M> field = 
+using fieldvector = std::array < std::array<int, N>, M>;
+fieldvector field =
 { {
 	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
@@ -54,7 +55,7 @@ std::array < std::array<int, N>, M> field =
 	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
 	{8,8,8,8,8,8,8,8,8,8},
-	{0,0,0,0,0,0,0,0,0,0},
+	{8,8,8,8,8,8,8,8,8,8},
 } };
 
 
@@ -66,7 +67,38 @@ struct Point
 	int y;
 };
 
+//collision detection results
+enum colres
+{
+	not_collide,
+	collide
 
+};
+
+
+// collision detection
+// we take the array which holds the propsed tetromino coordiantes and check if the positions overlap any boundaries:
+//return colres type corresponding to whether or not we had collision
+colres coldet(const std::array<Point, 4> & a, const std::array < std::array<int, N>, M> & field)
+{
+	for (int i = 0; i < 4; i++)
+	{
+		//check the boundaries 
+		if (a[i].x < 0 || a[i].x >= N || a[i].y >= M)
+		{
+			return colres::collide;
+		}
+
+		// check the field
+		else if (field[a[i].y][a[i].x] != 8) // it is an overlap when the proposed postion is not empty (number 8)
+		{
+			return colres::collide;
+		}
+
+	}
+
+	return colres::not_collide;
+}
 
 class tetromino
 {
@@ -89,7 +121,7 @@ public:
 
 	//-----------Public functions----------------------------
 
-	//fills vectro "a" with the tetromino starting coordinates corresponding to the tetromino type
+	//fills vector "a" with the tetromino starting coordinates corresponding to the tetromino type
 	void calc_coordinates() 
 	{
 		for (int i = 0; i < a.size(); ++i)
@@ -99,6 +131,80 @@ public:
 
 		}
 	}
+
+	//moves the tetromino sideways
+	void move_sideways(int & dx,fieldvector & field)
+	{
+		//temporarily store the old values
+		ta = a;
+
+		//calculate the new values
+		for (int i = 0; i < a.size(); ++i)
+		{
+			a[i].x = a[i].x + dx;
+		}
+
+		//collision detection 		
+		if (coldet(a, field) == colres::collide)
+		{
+			// if collide set it back to the original values
+			a = ta;
+
+		}
+
+	}
+
+	// rotate tetromino
+	void rotate(fieldvector & field)
+	{
+		if (tetromino_type != 6) // the square is not rotated at all
+		{
+			Point p = a[1]; //center of rotation
+
+			ta = a; //first store old values
+
+			//calculate the new ones
+			for (int i = 0; i < a.size(); ++i)
+			{
+
+				a[i].x = p.x + p.y - ta[i].y;
+				a[i].y = p.y - p.x + ta[i].x;
+
+			}
+			
+			//collision detection 		
+			if (coldet(a, field) == colres::collide)
+			{
+				// if collide set it back to the original values
+				a = ta;
+
+			}
+		}
+		
+	}
+
+	// tetromino fall
+	void fall()
+	{
+		ta = a; //temporarily store the old values
+		
+		// calculate the new coordiantes
+		for (int i = 0; i < a.size(); ++i)
+		{
+			a[i].y += 1;
+		}
+		
+	}
+	
+
+	
+
+	
+	
+
+	//---------------------------------------------------------------
+
+	
 
 private:
 
@@ -117,38 +223,7 @@ private:
 
 };
 
-//collision detection results
-enum colres
-{
-	not_collide,
-	collide
-	
-};
 
-
-// collision detection
-// we take the array which holds the propsed tetromino coordiantes and check if the positions overlap any boundaries:
-//return colres type corresponding to whether or not we had collision
-colres coldet(const std::array<Point, 4> & a, const std::array < std::array<int, N>, M> & field)
-{
-	for (int i = 0; i < 4; i++) 
-	{
-		//check the boundaries 
-		if (a[i].x < 0 || a[i].x >= N || a[i].y >= M)
-		{
-			return colres::collide;
-		}
-		
-		// check the field
-		else if (field[a[i].y][a[i].x] != 8) // it is an overlap when the proposed postion is not empty (number 8)
-		{
-			return colres::collide;
-		}
-
-	}
-	
-	return colres::not_collide;
-}
 
 // line check
 //returns true if the line is full of tetrmino pieces, means no colorcode in that line is 8
@@ -296,67 +371,27 @@ int main()
 			//sideways movement 
 			if (dx != 0)
 			{
-				//temporarily store the old values
-				ttrno.ta = ttrno.a;
+				ttrno.move_sideways(dx,field);
 				
-				//calculate the new values
-				for (int i = 0; i < 4; i++)
-				{				
-					
-					ttrno.a[i].x = ttrno.a[i].x + dx;
-				}
 				//Reset flags
 				dx = 0;
-
-				//collision detection 		
-				if (coldet(ttrno.a,field) == colres::collide)
-				{
-					// if collide set it back to the original values
-					ttrno.a = ttrno.ta;
-					
-				}
-
+								
 			}
 
 			//Rotate
-			else if (rotate == true && ttrno.tetromino_type != 6) //square is never rotated
+			else if (rotate == true ) 
 			{
-				Point p = ttrno.a[1]; //center of rotation
-								
-				//first store old values
-				ttrno.ta = ttrno.a;
+				ttrno.rotate(field);
 
-				//calculate the new ones
-				for (int i = 0; i < 4; i++)
-				{
-									
-					ttrno.a[i].x = p.x + p.y - ttrno.ta[i].y;
-					ttrno.a[i].y = p.y - p.x + ttrno.ta[i].x;
-
-				}
 				//Reste flags
 				rotate = false;
-
-				//collision detection 		
-				if (coldet(ttrno.a,field) == colres::collide)
-				{
-					// if collide set it back to the original values
-					ttrno.a = ttrno.ta;
-				}
-
 
 			}
 
 			// Fall
 			if (fall == true)
 			{
-				//temporarily store the old values
-				ttrno.ta = ttrno.a;
-				for (int i = 0; i < 4; i++)
-				{
-					//fall
-					ttrno.a[i].y += 1;
-				}
+				ttrno.fall();
 				//Reset flags
 				fall = false;
 
@@ -366,7 +401,7 @@ int main()
 					// if collide set it back to the original values
 					ttrno.a = ttrno.ta;
 					
-					// if we are there than the piece is collided while it fall this means it has to be locked
+					// if we are here than the piece is collided while it fall this means it has to be locked
 					// lock tetromino into field 
 
 					for (int i = 0; i < 4; i++)
