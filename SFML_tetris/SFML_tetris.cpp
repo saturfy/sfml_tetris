@@ -5,102 +5,82 @@
 #include <iostream>
 
 // tetromino block size in pixels on the texture
-const int block_size = 18;
+const int BLOCKSIZE = 18;
 
 //play area size in tetromino blocks
 const int M = 20;
 const int N = 10;
 
 // play area shift in pixels (moves it around in the window, so it can be matched with the backgorund)
-const int xshift = 28; // horizontal shift
-const int yshift = 31; // vertical shift
+const int XSHIFT = 28; // horizontal shift
+const int YSHIFT = 31; // vertical shift
 
 // the colors of the tetromni blcks 
 // the index of the given color corresponds to the position of the colored block in the texture
-enum color
+enum Color
 {
-	blue,
-	purple,
-	red,
-	green,
-	yellow,
-	cyan,
-	orange
+	Blue,
+	Purple,
+	Red,
+	Green,
+	Yellow,
+	Cyan,
+	Orange
 
 };
 
-//play area state is stored in the field variable
-// entry values are corresponding to the tetromino colors
-//8 : empty
-//0-7 : colored tile
-using fieldvector = std::array < std::array<int, N>, M>;
-fieldvector field =
-{ {
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-	{8,8,8,8,8,8,8,8,8,8},
-} };
-
-
 
 //coordinates for drawing the tetrominos
-struct Point 
+struct Point
 {
 	int x;
 	int y;
 };
 
 //collision detection results
-enum colres
+enum class ColRes
 {
-	not_collide,
-	collide
-
+	NotCollide,
+	Collide
 };
+
+
+
+//play area state is stored in the field variable
+// entry values are corresponding to the tetromino colors
+//8 : empty
+//0-7 : colored tile
+using field_vector = std::array < std::array<int, N>, M>;
+
+// the coordinates of the tetromino are stored in a vector of Points
+using tetr_vec = std::array<Point, 4>;
 
 
 // collision detection
 // we take the array which holds the propsed tetromino coordiantes and check if the positions overlap any boundaries:
 //return colres type corresponding to whether or not we had collision
-colres coldet(const std::array<Point, 4> & a, const std::array < std::array<int, N>, M> & field)
+ColRes coldet(const std::array<Point, 4> & a, const std::array < std::array<int, N>, M> & field)
 {
 	for (int i = 0; i < 4; i++)
 	{
 		//check the boundaries 
 		if (a[i].x < 0 || a[i].x >= N || a[i].y >= M)
 		{
-			return colres::collide;
+			return ColRes::Collide;
 		}
 
 		// check the field
 		else if (field[a[i].y][a[i].x] != 8) // it is an overlap when the proposed postion is not empty (number 8)
 		{
-			return colres::collide;
+			return ColRes::Collide;
 		}
 
 	}
 
-	return colres::not_collide;
+	return ColRes::NotCollide;
 }
 
-class tetromino
+class Tetromino
 {
 public:
 
@@ -111,10 +91,10 @@ public:
 	int tetromino_type_next;
 
 	//tetromino color
-	int tetromino_color;
+	Color tetromino_color;
 	
 	//2D point a will contain the tetromino parts, ta is temporary coordinates
-	std::array<Point, 4> a, ta;
+	tetr_vec a, ta;
 
 	// shifts the x coordinate of the tetromino when first calculated
 	int starting_shift = 5;
@@ -122,7 +102,7 @@ public:
 	//-----------Public functions----------------------------
 
 	//fills vector "a" with the tetromino starting coordinates corresponding to the tetromino type
-	void calc_coordinates() 
+	void calcCoordinates() 
 	{
 		for (int i = 0; i < a.size(); ++i)
 		{
@@ -133,7 +113,8 @@ public:
 	}
 
 	//moves the tetromino sideways
-	void move_sideways(int & dx,fieldvector & field)
+	// this function takes the moving direction and the  playing field as input to calcualte collision
+	void moveSideways(int & dx,field_vector & field)
 	{
 		//temporarily store the old values
 		ta = a;
@@ -145,7 +126,7 @@ public:
 		}
 
 		//collision detection 		
-		if (coldet(a, field) == colres::collide)
+		if (coldet(a, field) == ColRes::Collide)
 		{
 			// if collide set it back to the original values
 			a = ta;
@@ -155,7 +136,8 @@ public:
 	}
 
 	// rotate tetromino
-	void rotate(fieldvector & field)
+	// this function takes the playing field as input to calcualte collision
+	void rotate(field_vector & field)
 	{
 		if (tetromino_type != 6) // the square is not rotated at all
 		{
@@ -173,7 +155,7 @@ public:
 			}
 			
 			//collision detection 		
-			if (coldet(a, field) == colres::collide)
+			if (coldet(a, field) == ColRes::Collide)
 			{
 				// if collide set it back to the original values
 				a = ta;
@@ -184,7 +166,9 @@ public:
 	}
 
 	// tetromino fall
-	void fall()
+	// the function takes the playing field as input to calculate the collision detection
+	// this fucntion returns whether or not the falling tetromino collided, because if the piece collides while falling it has to be detected in order to lock it in place
+	ColRes fall(field_vector & field)
 	{
 		ta = a; //temporarily store the old values
 		
@@ -194,17 +178,19 @@ public:
 			a[i].y += 1;
 		}
 		
+
+		// collision detection
+		if (coldet(a, field) == ColRes::Collide)
+		{
+			// if collide set it back to the original values
+			a = ta;
+			return ColRes::Collide;
+		}
+		
+		return ColRes::NotCollide;
 	}
-	
-
-	
-
-	
-	
 
 	//---------------------------------------------------------------
-
-	
 
 private:
 
@@ -224,6 +210,47 @@ private:
 };
 
 
+class PlayingField 
+{
+public:
+	field_vector field =
+	{ {
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+		{8,8,8,8,8,8,8,8,8,8},
+	} };
+
+
+	//--------------------------Public functions-----------------------
+	// this function takes the tetromino coordinate vector and tetromino color and copies them into the field variable to lock the into the playing field
+	void lockTetromino(tetr_vec & a, Color color)
+	{
+		for (int i = 0; i < a.size(); ++i)
+		{
+			field[a[i].y][a[i].x] = color;
+		}
+	}
+
+	//-----------------------------------------------------------------
+private:
+};
 
 // line check
 //returns true if the line is full of tetrmino pieces, means no colorcode in that line is 8
@@ -259,25 +286,26 @@ void deleteline(int n, std::array < std::array<int, N>, M>& field)
 
 
 int main()
-{	
+{
 	//random number generator 
 	std::random_device rd;
 	std::default_random_engine generator(rd());
 	std::uniform_int_distribution<int> distribution(0, 6);
 	auto randgen = std::bind(distribution, generator);
-	
+
 	//create tetromino object
-	tetromino ttrno;
+	Tetromino ttrno;
 
 
 	// spawn the very first tetromino
 	ttrno.tetromino_type = randgen(); //choose a tetromino from the list of 7 in figures
-	ttrno.tetromino_color = ttrno.tetromino_type; // the number corresponding to the color of the tetromino
+	ttrno.tetromino_color = static_cast<Color>(ttrno.tetromino_type); // the number corresponding to the color of the tetromino
 	ttrno.tetromino_type_next = randgen(); // choose the next tetromino
 	// if we have the tetromino type we calculate the coordinates
-	ttrno.calc_coordinates();
+	ttrno.calcCoordinates();
 
-	
+	// create playing field object
+	PlayingField plf;
 
 	
 
@@ -356,7 +384,7 @@ int main()
 		{
 			
 			// difficulty: this sets how many times the delay time passes before the tetromino falls 1 step
-			counter++;
+			++counter;
 			if (counter == D)
 			{
 				fall = true;
@@ -371,7 +399,7 @@ int main()
 			//sideways movement 
 			if (dx != 0)
 			{
-				ttrno.move_sideways(dx,field);
+				ttrno.moveSideways(dx,plf.field);
 				
 				//Reset flags
 				dx = 0;
@@ -381,7 +409,7 @@ int main()
 			//Rotate
 			else if (rotate == true ) 
 			{
-				ttrno.rotate(field);
+				ttrno.rotate(plf.field);
 
 				//Reste flags
 				rotate = false;
@@ -391,55 +419,43 @@ int main()
 			// Fall
 			if (fall == true)
 			{
-				ttrno.fall();
+				ColRes is_collide = ttrno.fall(plf.field);
 				//Reset flags
 				fall = false;
 
-				//collision detection 		
-				if (coldet(ttrno.a,field) == colres::collide)
-				{
-					// if collide set it back to the original values
-					ttrno.a = ttrno.ta;
+				// if we are here than the piece is collided while it fall this means it has to be locked
+				// lock tetromino into field 	
+				if (is_collide == ColRes::Collide)
+				{		
 					
-					// if we are here than the piece is collided while it fall this means it has to be locked
-					// lock tetromino into field 
-
-					for (int i = 0; i < 4; i++)
-					{
-						field[ttrno.a[i].y][ttrno.a[i].x] = ttrno.tetromino_color;
-					}
-					
+					plf.lockTetromino(ttrno.a, ttrno.tetromino_color);
+			
 					
 					// spawn the next tetromino and generate the new next
 					// one random number generates the form color combination (they are locked)
 					ttrno.tetromino_type = ttrno.tetromino_type_next;
-					ttrno.tetromino_color = ttrno.tetromino_type;
+					ttrno.tetromino_color = static_cast<Color>(ttrno.tetromino_type);
 					// generate new next tetromino
 					ttrno.tetromino_type_next = randgen();
 					//creating starting coordinates
-					ttrno.calc_coordinates();
+					ttrno.calcCoordinates();
 					
-					
-				
-				
-				}	
-					
-			
+					//check line completion bottom to top
 
-			//check line completion bottom to top
-				
-				for (int i = M-1; i >= 0; i--)
-				{
-					if (linecheck(field[i]))
+					for (int i = M - 1; i >= 0; i--)
 					{
-						// delete the compelete line
-						deleteline(i, field);
-						// increase the counter to check the new line again because the numbers shift down
-						i++;
-					}
+						if (linecheck(plf.field[i]))
+						{
+							// delete the compelete line
+							deleteline(i, plf.field);
+							// increase the counter to check the new line again because the numbers shift down
+							i++;
+						}
 
+					}				
+				
 				}
-
+						
 			}
 
 
@@ -457,27 +473,27 @@ int main()
 			{
 				for (int j = 0; j < N; j++)
 				{
-					if (field[i][j] == 8)
+					if (plf.field[i][j] == 8)
 					{
 						continue;
 					}
 					
 					// set the texture rect for the correct color
-					s.setTextureRect(sf::IntRect(field[i][j] * block_size, 0, block_size, block_size));
-					s.setPosition(j * block_size + xshift, i * block_size + yshift);
+					s.setTextureRect(sf::IntRect(plf.field[i][j] * BLOCKSIZE, 0, BLOCKSIZE, BLOCKSIZE));
+					s.setPosition(j * BLOCKSIZE + XSHIFT, i * BLOCKSIZE + YSHIFT);
 					window.draw(s);
 				}
 			}
 
 			//draw a tetromino
 			// set the texture rect for the correct color
-			s.setTextureRect(sf::IntRect( ttrno.tetromino_color * block_size,0, block_size, block_size));
+			s.setTextureRect(sf::IntRect( ttrno.tetromino_color * BLOCKSIZE,0, BLOCKSIZE, BLOCKSIZE));
 
 			// draw tetromino pieces
 			for (int i = 0; i < 4; i++)
 			{
 				// set the texture position
-				s.setPosition(ttrno.a[i].x * block_size + xshift , ttrno.a[i].y * block_size + yshift );
+				s.setPosition(ttrno.a[i].x * BLOCKSIZE + XSHIFT , ttrno.a[i].y * BLOCKSIZE + YSHIFT );
 				window.draw(s);
 			}
 
